@@ -7,6 +7,7 @@ type Props = {
   onNudge: (dx: number, dy: number) => void;
   onRotateTo: (angle: number) => void;
   onSaturationChange: (saturation: number) => void;
+  onHueChange: (hue: number) => void;
   onInvert: () => void;
 };
 
@@ -17,6 +18,7 @@ const SidebarControls: React.FC<Props> = ({
   onNudge,
   onRotateTo,
   onSaturationChange,
+  onHueChange,
   onInvert,
 }) => {
   // Local state to track the slider’s angle (0–360)
@@ -121,6 +123,21 @@ const SidebarControls: React.FC<Props> = ({
       </div>
 
       <div style={{ marginBottom: 15 }}>
+        <label style={{ display: 'block', marginBottom: 5 }}>
+          <strong>Hue Rotate</strong> (0°–360°)
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="360"
+          step="1"
+          defaultValue="0"
+          onChange={e => onHueChange(parseInt(e.target.value, 10))}
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
         <button onClick={onInvert} style={{ width: '100%' }}>
           Invert Colors
         </button>
@@ -130,3 +147,4 @@ const SidebarControls: React.FC<Props> = ({
 };
 
 export default SidebarControls;
+

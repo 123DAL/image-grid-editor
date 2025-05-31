@@ -9,6 +9,7 @@ type Props = {
   cellOffsets: Record<string, { dx: number; dy: number }>;
   cellRotations: Record<string, number>;
   cellSaturation: Record<string, number>;
+  cellHue: Record<string, number>;
   cellInverted: Record<string, boolean>;
 };
 
@@ -25,6 +26,7 @@ const GridCanvas: React.FC<Props> = ({
   cellOffsets,
   cellRotations,
   cellSaturation,
+  cellHue,
   cellInverted,
 }) => {
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
@@ -65,6 +67,7 @@ const GridCanvas: React.FC<Props> = ({
           const { dx = 0, dy = 0 } = cellOffsets[id] || {};
           const rotation = cellRotations[id] || 0;
           const saturation = cellSaturation[id] ?? 100;
+          const hueValue = cellHue[id] ?? 0;
           const inverted = cellInverted[id] || false;
 
           return (
@@ -92,7 +95,7 @@ const GridCanvas: React.FC<Props> = ({
                   style={{
                     transform: `translate(${dx}px, ${dy}px) rotate(${rotation}deg) scale(${scale})`,
                     transformOrigin: 'center center',
-                    filter: `invert(${inverted ? 1 : 0}) saturate(${saturation}%)`,
+                    filter: `invert(${inverted ? 1 : 0}) saturate(${saturation}%) hue-rotate(${hueValue}deg)`,
                     maxWidth: '100%',
                     maxHeight: '100%',
                   }}
