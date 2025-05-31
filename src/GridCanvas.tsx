@@ -5,6 +5,7 @@ type Props = {
   setSelectedCells: React.Dispatch<React.SetStateAction<Set<string>>>;
   cellImages: Record<string, string>;
   cellScales: Record<string, number>;
+  allowOverflow: boolean;
 };
 
 const SIZE = 80;
@@ -16,21 +17,19 @@ const GridCanvas: React.FC<Props> = ({
   setSelectedCells,
   cellImages,
   cellScales,
+  allowOverflow,
 }) => {
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
-    const id = `${row + 1}${String.fromCharCode(65 + col)}`; // e.g. "3C"
+    const id = `${row + 1}${String.fromCharCode(65 + col)}`;
     if (ev.detail === 2) {
-      // double-click: clear all
       setSelectedCells(new Set());
     } else if (ev.ctrlKey || ev.metaKey) {
-      // ctrl+click: unselect
       setSelectedCells(prev => {
         const s = new Set(prev);
         s.delete(id);
         return s;
       });
     } else {
-      // normal click: select
       setSelectedCells(prev => {
         const s = new Set(prev);
         s.add(id);
@@ -52,10 +51,9 @@ const GridCanvas: React.FC<Props> = ({
       {Array.from({ length: ROWS }).flatMap((_, r) =>
         Array.from({ length: COLS }).map((_, c) => {
           const id = `${r + 1}${String.fromCharCode(65 + c)}`;
-          const imgSrc = cellImages[id];
           const selected = selectedCells.has(id);
-          // default 100% if no scale set
-          const scale = ((cellScales[id] ?? 100) / 100);
+          const imgSrc = cellImages[id];
+          const scale = (cellScales[id] ?? 100) / 100;
 
           return (
             <div
@@ -71,7 +69,8 @@ const GridCanvas: React.FC<Props> = ({
                 justifyContent: 'center',
                 position: 'relative',
                 cursor: 'pointer',
-                overflow: 'hidden',
+                overflow: allowOverflow ? 'visible' : 'hidden',
+                zIndex: allowOverflow && imgSrc ? 10 : 'auto',
               }}
             >
               {imgSrc ? (
@@ -86,7 +85,7 @@ const GridCanvas: React.FC<Props> = ({
                   }}
                 />
               ) : (
-                id
+                <span>{id}</span>
               )}
             </div>
           );
