@@ -6,6 +6,9 @@ type Props = {
   cellImages: Record<string, string>;
   cellScales: Record<string, number>;
   allowOverflow: boolean;
+  cellOffsets: Record<string, { dx: number; dy: number }>;
+  cellRotations: Record<string, number>;
+  cellInverted: Record<string, boolean>;
 };
 
 const SIZE = 80;
@@ -18,6 +21,9 @@ const GridCanvas: React.FC<Props> = ({
   cellImages,
   cellScales,
   allowOverflow,
+  cellOffsets,
+  cellRotations,
+  cellInverted,
 }) => {
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
     const id = `${row + 1}${String.fromCharCode(65 + col)}`;
@@ -54,6 +60,9 @@ const GridCanvas: React.FC<Props> = ({
           const selected = selectedCells.has(id);
           const imgSrc = cellImages[id];
           const scale = (cellScales[id] ?? 100) / 100;
+          const { dx = 0, dy = 0 } = cellOffsets[id] || {};
+          const rotation = cellRotations[id] || 0;
+          const inverted = cellInverted[id] || false;
 
           return (
             <div
@@ -78,8 +87,9 @@ const GridCanvas: React.FC<Props> = ({
                   src={imgSrc}
                   alt={id}
                   style={{
-                    transform: `scale(${scale})`,
+                    transform: `translate(${dx}px, ${dy}px) rotate(${rotation}deg) scale(${scale})`,
                     transformOrigin: 'center center',
+                    filter: inverted ? 'invert(1)' : 'none',
                     maxWidth: '100%',
                     maxHeight: '100%',
                   }}
@@ -96,3 +106,4 @@ const GridCanvas: React.FC<Props> = ({
 };
 
 export default GridCanvas;
+

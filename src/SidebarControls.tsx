@@ -1,12 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 type Props = {
   onUpload: (dataUrl: string) => void;
   onScaleChange: (scale: number) => void;
+  onToggleOverflow: (allow: boolean) => void;
+  onNudge: (dx: number, dy: number) => void;
+  onRotateTo: (angle: number) => void;
+  onInvert: () => void;
 };
 
-const SidebarControls: React.FC<Props> = ({ onUpload, onScaleChange }) => {
-  // Handle file selection and convert to Data URL
+const SidebarControls: React.FC<Props> = ({
+  onUpload,
+  onScaleChange,
+  onToggleOverflow,
+  onNudge,
+  onRotateTo,
+  onInvert,
+}) => {
+  // Local state to track the slider’s angle (0–360)
+  const [sliderAngle, setSliderAngle] = useState<number>(0);
+
+  // Whenever sliderAngle changes, call onRotateTo
+  useEffect(() => {
+    onRotateTo(sliderAngle);
+  }, [sliderAngle, onRotateTo]);
+
+  // Handle file selection
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -23,7 +42,6 @@ const SidebarControls: React.FC<Props> = ({ onUpload, onScaleChange }) => {
     <div style={{ width: 200, padding: '10px', border: '1px solid #ddd' }}>
       <h3>Controls</h3>
 
-      {/* Image Upload */}
       <div style={{ marginBottom: 15 }}>
         <label style={{ display: 'block', marginBottom: 5 }}>
           <strong>Upload Image</strong>
@@ -31,7 +49,6 @@ const SidebarControls: React.FC<Props> = ({ onUpload, onScaleChange }) => {
         <input type="file" accept="image/*" onChange={handleFile} />
       </div>
 
-      {/* Scale Slider */}
       <div style={{ marginBottom: 15 }}>
         <label style={{ display: 'block', marginBottom: 5 }}>
           <strong>Scale</strong> (50%–400%)
@@ -45,6 +62,51 @@ const SidebarControls: React.FC<Props> = ({ onUpload, onScaleChange }) => {
           onChange={e => onScaleChange(parseInt(e.target.value, 10))}
           style={{ width: '100%' }}
         />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label>
+          <input
+            type="checkbox"
+            onChange={e => onToggleOverflow(e.target.checked)}
+            style={{ marginRight: 5 }}
+          />
+          <strong>Allow Overflow</strong>
+        </label>
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <strong>Nudge:</strong>
+        <div style={{ marginTop: 5 }}>
+          <button onClick={() => onNudge(0, -1)}>⬆️</button>{' '}
+          <button onClick={() => onNudge(-1, 0)}>⬅️</button>{' '}
+          <button onClick={() => onNudge(1, 0)}>➡️</button>{' '}
+          <button onClick={() => onNudge(0, 1)}>⬇️</button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ display: 'block', marginBottom: 5 }}>
+          <strong>Rotation (0°–360°)</strong>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="360"
+          step="1"
+          value={sliderAngle}
+          onChange={e => setSliderAngle(parseInt(e.target.value, 10))}
+          style={{ width: '100%' }}
+        />
+        <div style={{ marginTop: 5, textAlign: 'center' }}>
+          <span>{sliderAngle}°</span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={onInvert} style={{ width: '100%' }}>
+          Invert Colors
+        </button>
       </div>
     </div>
   );
