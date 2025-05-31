@@ -8,6 +8,7 @@ type Props = {
   allowOverflow: boolean;
   cellOffsets: Record<string, { dx: number; dy: number }>;
   cellRotations: Record<string, number>;
+  cellSaturation: Record<string, number>;
   cellInverted: Record<string, boolean>;
 };
 
@@ -23,6 +24,7 @@ const GridCanvas: React.FC<Props> = ({
   allowOverflow,
   cellOffsets,
   cellRotations,
+  cellSaturation,
   cellInverted,
 }) => {
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
@@ -62,6 +64,7 @@ const GridCanvas: React.FC<Props> = ({
           const scale = (cellScales[id] ?? 100) / 100;
           const { dx = 0, dy = 0 } = cellOffsets[id] || {};
           const rotation = cellRotations[id] || 0;
+          const saturation = cellSaturation[id] ?? 100;
           const inverted = cellInverted[id] || false;
 
           return (
@@ -89,7 +92,7 @@ const GridCanvas: React.FC<Props> = ({
                   style={{
                     transform: `translate(${dx}px, ${dy}px) rotate(${rotation}deg) scale(${scale})`,
                     transformOrigin: 'center center',
-                    filter: inverted ? 'invert(1)' : 'none',
+                    filter: `invert(${inverted ? 1 : 0}) saturate(${saturation}%)`,
                     maxWidth: '100%',
                     maxHeight: '100%',
                   }}

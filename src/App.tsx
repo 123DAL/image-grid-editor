@@ -15,6 +15,8 @@ const App: React.FC = () => {
   const [allowOverflow, setAllowOverflow] = useState<boolean>(false);
   // Rotation angle (0–359) per cell
   const [cellRotations, setCellRotations] = useState<Record<string, number>>({});
+  // Saturation percentage (0–200) per cell
+  const [cellSaturation, setCellSaturation] = useState<Record<string, number>>({});
   // State for whether each cell is inverted (negative)
   const [cellInverted, setCellInverted] = useState<Record<string, boolean>>({});
 
@@ -68,6 +70,17 @@ const App: React.FC = () => {
     });
   };
 
+  // Update saturation (0–200) for selected cells
+  const handleSaturationChange = (saturation: number) => {
+    setCellSaturation(sats => {
+      const copy = { ...sats };
+      selectedCells.forEach(id => {
+        copy[id] = saturation;
+      });
+      return copy;
+    });
+  };
+
   // Toggle inversion (negative) for selected cells
   const handleInvert = () => {
     setCellInverted(inv => {
@@ -90,6 +103,7 @@ const App: React.FC = () => {
         allowOverflow={allowOverflow}
         cellOffsets={cellOffsets}
         cellRotations={cellRotations}
+        cellSaturation={cellSaturation}
         cellInverted={cellInverted}
       />
       <SidebarControls
@@ -98,6 +112,7 @@ const App: React.FC = () => {
         onToggleOverflow={handleToggleOverflow}
         onNudge={handleNudge}
         onRotateTo={handleRotateTo}
+        onSaturationChange={handleSaturationChange}
         onInvert={handleInvert}
       />
     </div>
