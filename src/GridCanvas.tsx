@@ -10,7 +10,11 @@ type Props = {
   cellRotations: Record<string, number>;
   cellSaturation: Record<string, number>;
   cellHue: Record<string, number>;
+  cellOpacity: Record<string, number>;
+  cellBrightness: Record<string, number>;
   cellInverted: Record<string, boolean>;
+  cellFlipH: Record<string, boolean>;
+  cellFlipV: Record<string, boolean>;
 };
 
 const SIZE = 80;
@@ -27,7 +31,11 @@ const GridCanvas: React.FC<Props> = ({
   cellRotations,
   cellSaturation,
   cellHue,
+  cellOpacity,
+  cellBrightness,
   cellInverted,
+  cellFlipH,
+  cellFlipV,
 }) => {
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
     const id = `${row + 1}${String.fromCharCode(65 + col)}`;
@@ -68,7 +76,11 @@ const GridCanvas: React.FC<Props> = ({
           const rotation = cellRotations[id] || 0;
           const saturation = cellSaturation[id] ?? 100;
           const hueValue = cellHue[id] ?? 0;
+          const opacityValue = (cellOpacity[id] ?? 100) / 100;
+          const brightnessVal = cellBrightness[id] ?? 100;
           const inverted = cellInverted[id] || false;
+          const flipH = cellFlipH[id] ? -1 : 1;
+          const flipV = cellFlipV[id] ? -1 : 1;
 
           return (
             <div
@@ -93,9 +105,19 @@ const GridCanvas: React.FC<Props> = ({
                   src={imgSrc}
                   alt={id}
                   style={{
-                    transform: `translate(${dx}px, ${dy}px) rotate(${rotation}deg) scale(${scale})`,
+                    transform: `
+                      translate(${dx}px, ${dy}px)
+                      rotate(${rotation}deg)
+                      scale(${flipH * scale}, ${flipV * scale})
+                    `,
                     transformOrigin: 'center center',
-                    filter: `invert(${inverted ? 1 : 0}) saturate(${saturation}%) hue-rotate(${hueValue}deg)`,
+                    opacity: opacityValue,
+                    filter: `
+                      invert(${inverted ? 1 : 0})
+                      saturate(${saturation}%)
+                      hue-rotate(${hueValue}deg)
+                      brightness(${brightnessVal}%)
+                    `,
                     maxWidth: '100%',
                     maxHeight: '100%',
                   }}
@@ -112,4 +134,3 @@ const GridCanvas: React.FC<Props> = ({
 };
 
 export default GridCanvas;
-

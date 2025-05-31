@@ -19,8 +19,16 @@ const App: React.FC = () => {
   const [cellSaturation, setCellSaturation] = useState<Record<string, number>>({});
   // Hue rotation (0–360) per cell
   const [cellHue, setCellHue] = useState<Record<string, number>>({});
-  // State for whether each cell is inverted (negative)
+  // Opacity (0–100) per cell
+  const [cellOpacity, setCellOpacity] = useState<Record<string, number>>({});
+  // Brightness percentage (0–200) per cell
+  const [cellBrightness, setCellBrightness] = useState<Record<string, number>>({});
+  // Whether each cell is inverted (negative)
   const [cellInverted, setCellInverted] = useState<Record<string, boolean>>({});
+  // Whether each cell is flipped horizontally
+  const [cellFlipH, setCellFlipH] = useState<Record<string, boolean>>({});
+  // Whether each cell is flipped vertically
+  const [cellFlipV, setCellFlipV] = useState<Record<string, boolean>>({});
 
   // Assign the uploaded image to each selected cell
   const handleUpload = (dataUrl: string) => {
@@ -94,10 +102,56 @@ const App: React.FC = () => {
     });
   };
 
+  // Update opacity (0–100) for selected cells
+  const handleOpacityChange = (opacity: number) => {
+    setCellOpacity(op => {
+      const copy = { ...op };
+      selectedCells.forEach(id => {
+        copy[id] = opacity;
+      });
+      return copy;
+    });
+  };
+
+  // Update brightness (0–200) for selected cells
+  const handleBrightnessChange = (brightness: number) => {
+    setCellBrightness(brights => {
+      const copy = { ...brights };
+      selectedCells.forEach(id => {
+        copy[id] = brightness;
+      });
+      return copy;
+    });
+  };
+
   // Toggle inversion (negative) for selected cells
   const handleInvert = () => {
     setCellInverted(inv => {
       const copy = { ...inv };
+      selectedCells.forEach(id => {
+        const prev = copy[id] || false;
+        copy[id] = !prev;
+      });
+      return copy;
+    });
+  };
+
+  // Toggle flip horizontal for selected cells
+  const handleFlipH = () => {
+    setCellFlipH(flips => {
+      const copy = { ...flips };
+      selectedCells.forEach(id => {
+        const prev = copy[id] || false;
+        copy[id] = !prev;
+      });
+      return copy;
+    });
+  };
+
+  // Toggle flip vertical for selected cells
+  const handleFlipV = () => {
+    setCellFlipV(flips => {
+      const copy = { ...flips };
       selectedCells.forEach(id => {
         const prev = copy[id] || false;
         copy[id] = !prev;
@@ -118,7 +172,11 @@ const App: React.FC = () => {
         cellRotations={cellRotations}
         cellSaturation={cellSaturation}
         cellHue={cellHue}
+        cellOpacity={cellOpacity}
+        cellBrightness={cellBrightness}
         cellInverted={cellInverted}
+        cellFlipH={cellFlipH}
+        cellFlipV={cellFlipV}
       />
       <SidebarControls
         onUpload={handleUpload}
@@ -128,7 +186,11 @@ const App: React.FC = () => {
         onRotateTo={handleRotateTo}
         onSaturationChange={handleSaturationChange}
         onHueChange={handleHueChange}
+        onOpacityChange={handleOpacityChange}
+        onBrightnessChange={handleBrightnessChange}
         onInvert={handleInvert}
+        onFlipH={handleFlipH}
+        onFlipV={handleFlipV}
       />
     </div>
   );

@@ -8,7 +8,11 @@ type Props = {
   onRotateTo: (angle: number) => void;
   onSaturationChange: (saturation: number) => void;
   onHueChange: (hue: number) => void;
+  onOpacityChange: (opacity: number) => void;
+  onBrightnessChange: (brightness: number) => void;
   onInvert: () => void;
+  onFlipH: () => void;
+  onFlipV: () => void;
 };
 
 const SidebarControls: React.FC<Props> = ({
@@ -19,7 +23,11 @@ const SidebarControls: React.FC<Props> = ({
   onRotateTo,
   onSaturationChange,
   onHueChange,
+  onOpacityChange,
+  onBrightnessChange,
   onInvert,
+  onFlipH,
+  onFlipV,
 }) => {
   // Local state to track the slider’s angle (0–360)
   const [sliderAngle, setSliderAngle] = useState<number>(0);
@@ -138,8 +146,50 @@ const SidebarControls: React.FC<Props> = ({
       </div>
 
       <div style={{ marginBottom: 15 }}>
+        <label style={{ display: 'block', marginBottom: 5 }}>
+          <strong>Opacity</strong> (0%–100%)
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          defaultValue="100"
+          onChange={e => onOpacityChange(parseInt(e.target.value, 10))}
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ display: 'block', marginBottom: 5 }}>
+          <strong>Brightness</strong> (0%–200%)
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="200"
+          step="1"
+          defaultValue="100"
+          onChange={e => onBrightnessChange(parseInt(e.target.value, 10))}
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
         <button onClick={onInvert} style={{ width: '100%' }}>
           Invert Colors
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={onFlipH} style={{ width: '100%' }}>
+          Flip Horizontal
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={onFlipV} style={{ width: '100%' }}>
+          Flip Vertical
         </button>
       </div>
     </div>
