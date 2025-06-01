@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import GridCanvas from './GridCanvas';
 import SidebarControls from './SidebarControls';
 import html2canvas from 'html2canvas';
+import QRCodeGenerator from './QRCodeGenerator';
 
 type ProjectState = {
   cellImages: Record<string, string>;
@@ -20,7 +21,7 @@ type ProjectState = {
 
 const LOCAL_STORAGE_KEY = 'imageGridProjects';
 
-// These constants must match the sizes used in GridCanvas:
+// These constants match the sizes used in GridCanvas:
 const SIZE = 80;
 const ROWS = 7;
 const GAP = 4;
@@ -46,6 +47,9 @@ const App: React.FC = () => {
   // ── Project management state ──
   const [projectNames, setProjectNames] = useState<string[]>([]);
   const [currentProject, setCurrentProject] = useState<string>('');
+
+  // ── QR toggle ──
+  const [showQRPage, setShowQRPage] = useState<boolean>(false);
 
   // Snapshot mode: hides borders/labels during PNG capture
   const [snapshotMode, setSnapshotMode] = useState<boolean>(false);
@@ -353,73 +357,84 @@ const App: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        padding: 20,
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* ── LEFT COLUMN: The 7×7 grid, fixed height = GRID_HEIGHT (584px) ── */}
-      <div style={{ flexShrink: 0, height: `${GRID_HEIGHT}px` }}>
-        <div ref={gridRef}>
-          <GridCanvas
-            selectedCells={selectedCells}
-            setSelectedCells={setSelectedCells}
-            cellImages={cellImages}
-            cellScales={cellScales}
-            allowOverflow={allowOverflow}
-            cellOffsets={cellOffsets}
-            cellRotations={cellRotations}
-            cellSaturation={cellSaturation}
-            cellHue={cellHue}
-            cellOpacity={cellOpacity}
-            cellBrightness={cellBrightness}
-            cellInverted={cellInverted}
-            cellFlipH={cellFlipH}
-            cellFlipV={cellFlipV}
-            snapshotMode={snapshotMode}
-          />
+    <div style={{ padding: 20, boxSizing: 'border-box' }}>
+      {/* ── TOGGLE BUTTON ── */}
+      <div style={{ marginBottom: 20 }}>
+        <button
+          onClick={() => setShowQRPage(prev => !prev)}
+          style={{ padding: '8px 12px', fontSize: '1rem' }}
+        >
+          {showQRPage ? '← Back to Branding' : 'Generate QR Code'}
+        </button>
+      </div>
+
+      {showQRPage ? (
+        // ── QR Generator mode ──
+        <QRCodeGenerator />
+      ) : (
+        // ── Branding/Grid mode ──
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+          {/* Left column: 7×7 grid, fixed height */}
+          <div style={{ flexShrink: 0, height: `${GRID_HEIGHT}px` }}>
+            <div ref={gridRef}>
+              <GridCanvas
+                selectedCells={selectedCells}
+                setSelectedCells={setSelectedCells}
+                cellImages={cellImages}
+                cellScales={cellScales}
+                allowOverflow={allowOverflow}
+                cellOffsets={cellOffsets}
+                cellRotations={cellRotations}
+                cellSaturation={cellSaturation}
+                cellHue={cellHue}
+                cellOpacity={cellOpacity}
+                cellBrightness={cellBrightness}
+                cellInverted={cellInverted}
+                cellFlipH={cellFlipH}
+                cellFlipV={cellFlipV}
+                snapshotMode={snapshotMode}
+              />
+            </div>
+          </div>
+
+          {/* Right column: Sidebar, same height, scroll if needed */}
+          <div
+            style={{
+              flex: 1,
+              height: `${GRID_HEIGHT}px`,
+              overflowY: 'auto',
+              marginLeft: 20,
+              boxSizing: 'border-box',
+            }}
+          >
+            <SidebarControls
+              onUpload={handleUpload}
+              onScaleChange={handleScaleChange}
+              onToggleOverflow={handleToggleOverflow}
+              onNudge={handleNudge}
+              onRotateTo={handleRotateTo}
+              onSaturationChange={handleSaturationChange}
+              onHueChange={handleHueChange}
+              onOpacityChange={handleOpacityChange}
+              onBrightnessChange={handleBrightnessChange}
+              onInvert={handleInvert}
+              onFlipH={handleFlipH}
+              onFlipV={handleFlipV}
+              onResetImage={handleResetImage}
+              onDownloadSnapshot={handleDownloadSnapshot}
+
+              onNewProject={handleNewProject}
+              onSaveAs={handleSaveAs}
+              onSaveExisting={handleSaveExisting}
+              onRename={handleRenameProject}
+              projectNames={projectNames}
+              currentProject={currentProject}
+              setCurrentProject={setCurrentProject}
+              onLoadProject={handleLoadProject}
+            />
+          </div>
         </div>
-      </div>
-
-      {/* ── RIGHT COLUMN: Sidebar, same height (584px), scroll internally if needed ── */}
-      <div
-        style={{
-          flex: 1,
-          height: `${GRID_HEIGHT}px`,
-          overflowY: 'auto',
-          marginLeft: 20,
-          boxSizing: 'border-box',
-        }}
-      >
-        <SidebarControls
-          onUpload={handleUpload}
-          onScaleChange={handleScaleChange}
-          onToggleOverflow={handleToggleOverflow}
-          onNudge={handleNudge}
-          onRotateTo={handleRotateTo}
-          onSaturationChange={handleSaturationChange}
-          onHueChange={handleHueChange}
-          onOpacityChange={handleOpacityChange}
-          onBrightnessChange={handleBrightnessChange}
-          onInvert={handleInvert}
-          onFlipH={handleFlipH}
-          onFlipV={handleFlipV}
-          onResetImage={handleResetImage}
-          onDownloadSnapshot={handleDownloadSnapshot}
-
-          onNewProject={handleNewProject}
-          onSaveAs={handleSaveAs}
-          onSaveExisting={handleSaveExisting}
-          onRename={handleRenameProject}
-          projectNames={projectNames}
-          currentProject={currentProject}
-          setCurrentProject={setCurrentProject}
-          onLoadProject={handleLoadProject}
-        />
-      </div>
+      )}
     </div>
   );
 };
