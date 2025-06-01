@@ -20,8 +20,15 @@ type ProjectState = {
 
 const LOCAL_STORAGE_KEY = 'imageGridProjects';
 
+// These constants must match the sizes used in GridCanvas:
+const SIZE = 80;
+const ROWS = 7;
+const GAP = 4;
+// Grid height = 7 rows × 80px + 6 gaps × 4px = 560 + 24 = 584px
+const GRID_HEIGHT = ROWS * SIZE + (ROWS - 1) * GAP; // 584
+
 const App: React.FC = () => {
-  // --- grid selection + state ---
+  // ── Grid state ──
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [cellImages, setCellImages] = useState<Record<string, string>>({});
   const [cellScales, setCellScales] = useState<Record<string, number>>({});
@@ -36,15 +43,15 @@ const App: React.FC = () => {
   const [cellFlipH, setCellFlipH] = useState<Record<string, boolean>>({});
   const [cellFlipV, setCellFlipV] = useState<Record<string, boolean>>({});
 
-  // --- project management state ---
+  // ── Project management state ──
   const [projectNames, setProjectNames] = useState<string[]>([]);
   const [currentProject, setCurrentProject] = useState<string>('');
 
-  // When true, GridCanvas will hide borders/background for snapshot
+  // Snapshot mode: hides borders/labels during PNG capture
   const [snapshotMode, setSnapshotMode] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // On mount, load saved project names
+  // On mount: load saved project names from localStorage
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
@@ -52,7 +59,7 @@ const App: React.FC = () => {
         const parsed: Record<string, ProjectState> = JSON.parse(stored);
         setProjectNames(Object.keys(parsed));
       } catch {
-        // ignore parse errors
+        // ignore any JSON parse errors
       }
     }
   }, []);
@@ -68,7 +75,7 @@ const App: React.FC = () => {
     }
   };
 
-  // “New Project” clears all state and deselects current project
+  // “New Project” → clear grid state entirely
   const handleNewProject = () => {
     setCellImages({});
     setCellScales({});
@@ -86,7 +93,7 @@ const App: React.FC = () => {
     setCurrentProject('');
   };
 
-  // “Save As…” always creates a new entry under provided name
+  // “Save As…” → create a new named project key
   const handleSaveAs = (name: string) => {
     if (!name.trim()) return;
     const all = readAllProjects();
@@ -109,7 +116,7 @@ const App: React.FC = () => {
     setCurrentProject(name);
   };
 
-  // “Save” overwrites the entry under currentProject
+  // “Save” (overwrite existing project)
   const handleSaveExisting = () => {
     if (!currentProject) return;
     const all = readAllProjects();
@@ -131,12 +138,12 @@ const App: React.FC = () => {
     setProjectNames(Object.keys(all));
   };
 
-  // “Rename” moves old key → new key
+  // “Rename” → change the key of the current project to a new name
   const handleRenameProject = (newName: string) => {
     const oldName = currentProject;
     if (!oldName || !newName.trim() || oldName === newName) return;
     const all = readAllProjects();
-    if (!all[oldName] || all[newName]) return;
+    if (!all[oldName] || all[newName]) return; // cannot overwrite an existing key
     all[newName] = all[oldName];
     delete all[oldName];
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(all));
@@ -144,7 +151,7 @@ const App: React.FC = () => {
     setCurrentProject(newName);
   };
 
-  // “Load” replaces all grid state with stored project
+  // “Load” → restore grid state from a saved project
   const handleLoadProject = (name: string) => {
     const all = readAllProjects();
     const proj = all[name];
@@ -165,38 +172,38 @@ const App: React.FC = () => {
     setCurrentProject(name);
   };
 
-  // Assign uploaded image to selected cells
+  // Assign an uploaded image to every selected cell
   const handleUpload = (dataUrl: string) => {
-    setCellImages((imgs) => {
+    setCellImages(imgs => {
       const copy = { ...imgs };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = dataUrl;
       });
       return copy;
     });
   };
 
-  // Scale selected cells
+  // Update scale (50–400%) for each selected cell
   const handleScaleChange = (scale: number) => {
-    setCellScales((scales) => {
+    setCellScales(scales => {
       const copy = { ...scales };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = scale;
       });
       return copy;
     });
   };
 
-  // Toggle overflow
+  // Toggle whether overflow is allowed (visible) or clipped
   const handleToggleOverflow = (allow: boolean) => {
     setAllowOverflow(allow);
   };
 
-  // Nudge selected cells
+  // Nudge (dx, dy) for every selected cell
   const handleNudge = (dx: number, dy: number) => {
-    setCellOffsets((offsets) => {
+    setCellOffsets(offsets => {
       const copy = { ...offsets };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         const prev = copy[id] || { dx: 0, dy: 0 };
         copy[id] = { dx: prev.dx + dx, dy: prev.dy + dy };
       });
@@ -204,112 +211,112 @@ const App: React.FC = () => {
     });
   };
 
-  // Rotate selected cells to angle
+  // Rotate every selected cell to a specific angle (0–360)
   const handleRotateTo = (angle: number) => {
-    setCellRotations((rotations) => {
+    setCellRotations(rotations => {
       const copy = { ...rotations };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = ((angle % 360) + 360) % 360;
       });
       return copy;
     });
   };
 
-  // Adjust saturation
+  // Adjust saturation (0%–200%) for selected cells
   const handleSaturationChange = (saturation: number) => {
-    setCellSaturation((sats) => {
+    setCellSaturation(sats => {
       const copy = { ...sats };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = saturation;
       });
       return copy;
     });
   };
 
-  // Adjust hue rotate
+  // Adjust hue rotation (0°–360°) for selected cells
   const handleHueChange = (hue: number) => {
-    setCellHue((hues) => {
+    setCellHue(hues => {
       const copy = { ...hues };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = hue;
       });
       return copy;
     });
   };
 
-  // Adjust opacity
+  // Adjust opacity (0%–100%) for selected cells
   const handleOpacityChange = (opacity: number) => {
-    setCellOpacity((op) => {
+    setCellOpacity(op => {
       const copy = { ...op };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = opacity;
       });
       return copy;
     });
   };
 
-  // Adjust brightness
+  // Adjust brightness (0%–200%) for selected cells
   const handleBrightnessChange = (brightness: number) => {
-    setCellBrightness((brights) => {
+    setCellBrightness(brights => {
       const copy = { ...brights };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = brightness;
       });
       return copy;
     });
   };
 
-  // Invert selected cells
+  // Invert colors (negative) for each selected cell
   const handleInvert = () => {
-    setCellInverted((inv) => {
+    setCellInverted(inv => {
       const copy = { ...inv };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = !copy[id];
       });
       return copy;
     });
   };
 
-  // Flip horizontal on selected cells
+  // Flip horizontally each selected cell
   const handleFlipH = () => {
-    setCellFlipH((flips) => {
+    setCellFlipH(flips => {
       const copy = { ...flips };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = !copy[id];
       });
       return copy;
     });
   };
 
-  // Flip vertical on selected cells
+  // Flip vertically each selected cell
   const handleFlipV = () => {
-    setCellFlipV((flips) => {
+    setCellFlipV(flips => {
       const copy = { ...flips };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         copy[id] = !copy[id];
       });
       return copy;
     });
   };
 
-  // Reset (delete) images from selected cells
+  // Reset (delete) the image from every selected cell
   const handleResetImage = () => {
-    setCellImages((imgs) => {
+    setCellImages(imgs => {
       const copy = { ...imgs };
-      selectedCells.forEach((id) => {
+      selectedCells.forEach(id => {
         delete copy[id];
       });
       return copy;
     });
   };
 
-  // Delete key: remove images from selected cells
+  // Listen for Delete/Backspace to remove images from selected cells
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
-        setCellImages((imgs) => {
+        setCellImages(imgs => {
           const copy = { ...imgs };
-          selectedCells.forEach((id) => {
+          selectedCells.forEach(id => {
             delete copy[id];
           });
           return copy;
@@ -320,81 +327,99 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [selectedCells]);
 
-  // … other state and handlers above …
-
-  // --- Snapshot export (updated to use requestAnimationFrame) ---
+  // ── Snapshot export: hide grid labels, render to canvas, then restore ──
   const handleDownloadSnapshot = () => {
     if (!gridRef.current) return;
 
-    // 1) Turn on snapshotMode (hides cell borders & IDs)
+    // 1) Enable snapshotMode (hides borders/labels)
     setSnapshotMode(true);
 
-    // 2) Wait until next animation frame (ensuring DOM has re-rendered)
+    // 2) Wait one frame so React can update the DOM
     requestAnimationFrame(async () => {
-      // 3) Now capture with html2canvas
       const canvas = await html2canvas(gridRef.current!, {
-        backgroundColor: null, // transparent background
-        scale: 2,              // optional: higher resolution
+        backgroundColor: null,
+        scale: 2,
       });
 
-      // 4) Immediately turn snapshotMode off
+      // 3) Turn snapshotMode OFF again
       setSnapshotMode(false);
 
-      // 5) Trigger download of the PNG
+      // 4) Trigger a PNG download
       const link = document.createElement('a');
       link.download = `${currentProject || 'grid-snapshot'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     });
   };
+
   return (
-    <div style={{ display: 'flex', padding: 20 }}>
-      {/* Wrap GridCanvas in a div with ref so html2canvas can capture it */}
-      <div ref={gridRef}>
-        <GridCanvas
-          selectedCells={selectedCells}
-          setSelectedCells={setSelectedCells}
-          cellImages={cellImages}
-          cellScales={cellScales}
-          allowOverflow={allowOverflow}
-          cellOffsets={cellOffsets}
-          cellRotations={cellRotations}
-          cellSaturation={cellSaturation}
-          cellHue={cellHue}
-          cellOpacity={cellOpacity}
-          cellBrightness={cellBrightness}
-          cellInverted={cellInverted}
-          cellFlipH={cellFlipH}
-          cellFlipV={cellFlipV}
-          snapshotMode={snapshotMode}
-        />
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        padding: 20,
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* ── LEFT COLUMN: The 7×7 grid, fixed height = GRID_HEIGHT (584px) ── */}
+      <div style={{ flexShrink: 0, height: `${GRID_HEIGHT}px` }}>
+        <div ref={gridRef}>
+          <GridCanvas
+            selectedCells={selectedCells}
+            setSelectedCells={setSelectedCells}
+            cellImages={cellImages}
+            cellScales={cellScales}
+            allowOverflow={allowOverflow}
+            cellOffsets={cellOffsets}
+            cellRotations={cellRotations}
+            cellSaturation={cellSaturation}
+            cellHue={cellHue}
+            cellOpacity={cellOpacity}
+            cellBrightness={cellBrightness}
+            cellInverted={cellInverted}
+            cellFlipH={cellFlipH}
+            cellFlipV={cellFlipV}
+            snapshotMode={snapshotMode}
+          />
+        </div>
       </div>
 
-      <SidebarControls
-        onUpload={handleUpload}
-        onScaleChange={handleScaleChange}
-        onToggleOverflow={handleToggleOverflow}
-        onNudge={handleNudge}
-        onRotateTo={handleRotateTo}
-        onSaturationChange={handleSaturationChange}
-        onHueChange={handleHueChange}
-        onOpacityChange={handleOpacityChange}
-        onBrightnessChange={handleBrightnessChange}
-        onInvert={handleInvert}
-        onFlipH={handleFlipH}
-        onFlipV={handleFlipV}
-        onResetImage={handleResetImage}
-        onDownloadSnapshot={handleDownloadSnapshot}
+      {/* ── RIGHT COLUMN: Sidebar, same height (584px), scroll internally if needed ── */}
+      <div
+        style={{
+          flex: 1,
+          height: `${GRID_HEIGHT}px`,
+          overflowY: 'auto',
+          marginLeft: 20,
+          boxSizing: 'border-box',
+        }}
+      >
+        <SidebarControls
+          onUpload={handleUpload}
+          onScaleChange={handleScaleChange}
+          onToggleOverflow={handleToggleOverflow}
+          onNudge={handleNudge}
+          onRotateTo={handleRotateTo}
+          onSaturationChange={handleSaturationChange}
+          onHueChange={handleHueChange}
+          onOpacityChange={handleOpacityChange}
+          onBrightnessChange={handleBrightnessChange}
+          onInvert={handleInvert}
+          onFlipH={handleFlipH}
+          onFlipV={handleFlipV}
+          onResetImage={handleResetImage}
+          onDownloadSnapshot={handleDownloadSnapshot}
 
-        onNewProject={handleNewProject}
-        onSaveAs={handleSaveAs}
-        onSaveExisting={handleSaveExisting}
-        onRename={handleRenameProject}
-        projectNames={projectNames}
-        currentProject={currentProject}
-        setCurrentProject={setCurrentProject}
-        onLoadProject={handleLoadProject}
-      />
+          onNewProject={handleNewProject}
+          onSaveAs={handleSaveAs}
+          onSaveExisting={handleSaveExisting}
+          onRename={handleRenameProject}
+          projectNames={projectNames}
+          currentProject={currentProject}
+          setCurrentProject={setCurrentProject}
+          onLoadProject={handleLoadProject}
+        />
+      </div>
     </div>
   );
 };

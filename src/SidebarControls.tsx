@@ -14,8 +14,7 @@ type Props = {
   onFlipH: () => void;
   onFlipV: () => void;
   onResetImage: () => void;
-
-  onDownloadSnapshot: () => void; // new
+  onDownloadSnapshot: () => void;
 
   onNewProject: () => void;
   onSaveAs: (name: string) => void;
@@ -41,7 +40,6 @@ const SidebarControls: React.FC<Props> = ({
   onFlipH,
   onFlipV,
   onResetImage,
-
   onDownloadSnapshot,
 
   onNewProject,
@@ -53,18 +51,18 @@ const SidebarControls: React.FC<Props> = ({
   setCurrentProject,
   onLoadProject,
 }) => {
-  // Local state for “Project Name” input (used for Save As, Save, Rename)
+  // Local state for “Project Name” input
   const [projectNameInput, setProjectNameInput] = useState<string>(currentProject);
 
-  // Whenever currentProject changes (e.g. via Load), sync it to the input
+  // Sync input whenever currentProject changes
   useEffect(() => {
     setProjectNameInput(currentProject);
   }, [currentProject]);
 
-  // Local state to track the slider’s angle (0–360)
+  // Local state for rotation slider (0–360)
   const [sliderAngle, setSliderAngle] = useState<number>(0);
 
-  // Whenever sliderAngle changes, call onRotateTo
+  // When sliderAngle changes, call onRotateTo
   useEffect(() => {
     onRotateTo(sliderAngle);
   }, [sliderAngle, onRotateTo]);
@@ -82,35 +80,35 @@ const SidebarControls: React.FC<Props> = ({
     reader.readAsDataURL(file);
   };
 
-  // When user selects a project from dropdown
+  // When user picks a project from the dropdown
   const handleProjectSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const name = e.target.value;
     setCurrentProject(name);
   };
 
-  // When user clicks “Load”
+  // “Load” click
   const handleLoadClick = () => {
     if (currentProject) {
       onLoadProject(currentProject);
     }
   };
 
-  // When user clicks “Save As…”
+  // “Save As…” click
   const handleSaveAsClick = () => {
-    const nameToSave = projectNameInput.trim();
-    if (nameToSave) {
-      onSaveAs(nameToSave);
+    const name = projectNameInput.trim();
+    if (name) {
+      onSaveAs(name);
     }
   };
 
-  // When user clicks “Save” (overwrite existing)
+  // “Save” (overwrite)
   const handleSaveExistingClick = () => {
     if (currentProject) {
       onSaveExisting();
     }
   };
 
-  // When user clicks “Rename”
+  // “Rename” click
   const handleRenameClick = () => {
     const newName = projectNameInput.trim();
     if (currentProject && newName) {
@@ -119,228 +117,247 @@ const SidebarControls: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ width: 200, padding: '10px', border: '1px solid #ddd' }}>
-      <h3>Controls</h3>
+    <div style={{ width: '100%', boxSizing: 'border-box', padding: '10px 0' }}>
+      {/* 
+        We use a CSS grid with two columns of equal width.
+        Everything up through Brightness stays in the first column;
+        everything below moves into the second column.
+      */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          columnGap: '20px',
+          rowGap: '15px',
+        }}
+      >
+        {/* ───── COLUMN 1 ───── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* Upload Image */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Upload Image</strong>
+            </label>
+            <input type="file" accept="image/*" onChange={handleFile} />
+          </div>
 
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Upload Image</strong>
-        </label>
-        <input type="file" accept="image/*" onChange={handleFile} />
-      </div>
+          {/* Scale (50–400%) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Scale</strong> (50%–400%)
+            </label>
+            <input
+              type="range"
+              min="50"
+              max="400"
+              step="1"
+              defaultValue="100"
+              onChange={e => onScaleChange(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+          </div>
 
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Scale</strong> (50%–400%)
-        </label>
-        <input
-          type="range"
-          min="50"
-          max="400"
-          step="1"
-          defaultValue="100"
-          onChange={e => onScaleChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
+          {/* Allow Overflow */}
+          <div>
+            <label>
+              <input
+                type="checkbox"
+                onChange={e => onToggleOverflow(e.target.checked)}
+                style={{ marginRight: '5px' }}
+              />
+              <strong>Allow Overflow</strong>
+            </label>
+          </div>
 
-      <div style={{ marginBottom: 15 }}>
-        <label>
-          <input
-            type="checkbox"
-            onChange={e => onToggleOverflow(e.target.checked)}
-            style={{ marginRight: 5 }}
-          />
-          <strong>Allow Overflow</strong>
-        </label>
-      </div>
+          {/* Nudge */}
+          <div>
+            <strong>Nudge:</strong>
+            <div style={{ marginTop: '5px' }}>
+              <button onClick={() => onNudge(0, -1)}>⬆️</button>{' '}
+              <button onClick={() => onNudge(-1, 0)}>⬅️</button>{' '}
+              <button onClick={() => onNudge(1, 0)}>➡️</button>{' '}
+              <button onClick={() => onNudge(0, 1)}>⬇️</button>
+            </div>
+          </div>
 
-      <div style={{ marginBottom: 15 }}>
-        <strong>Nudge:</strong>
-        <div style={{ marginTop: 5 }}>
-          <button onClick={() => onNudge(0, -1)}>⬆️</button>{' '}
-          <button onClick={() => onNudge(-1, 0)}>⬅️</button>{' '}
-          <button onClick={() => onNudge(1, 0)}>➡️</button>{' '}
-          <button onClick={() => onNudge(0, 1)}>⬇️</button>
+          {/* Rotation (0°–360°) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Rotation (0°–360°)</strong>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="1"
+              value={sliderAngle}
+              onChange={e => setSliderAngle(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+            <div style={{ marginTop: '5px', textAlign: 'center' }}>
+              <span>{sliderAngle}°</span>
+            </div>
+          </div>
+
+          {/* Saturation (0%–200%) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Saturation</strong> (0%–200%)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              step="1"
+              defaultValue="100"
+              onChange={e => onSaturationChange(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* Hue Rotate (0°–360°) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Hue Rotate</strong> (0°–360°)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="1"
+              defaultValue="0"
+              onChange={e => onHueChange(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* Opacity (0%–100%) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Opacity</strong> (0%–100%)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              defaultValue="100"
+              onChange={e => onOpacityChange(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* Brightness (0%–200%) */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Brightness</strong> (0%–200%)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              step="1"
+              defaultValue="100"
+              onChange={e => onBrightnessChange(parseInt(e.target.value, 10))}
+              style={{ width: '100%' }}
+            />
+          </div>
         </div>
-      </div>
 
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Rotation (0°–360°)</strong>
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="360"
-          step="1"
-          value={sliderAngle}
-          onChange={e => setSliderAngle(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-        <div style={{ marginTop: 5, textAlign: 'center' }}>
-          <span>{sliderAngle}°</span>
+        {/* ───── COLUMN 2 ───── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* Invert Colors */}
+          <div>
+            <button onClick={onInvert} style={{ width: '100%' }}>
+              Invert Colors
+            </button>
+          </div>
+
+          {/* Flip Horizontal */}
+          <div>
+            <button onClick={onFlipH} style={{ width: '100%' }}>
+              Flip Horizontal
+            </button>
+          </div>
+
+          {/* Flip Vertical */}
+          <div>
+            <button onClick={onFlipV} style={{ width: '100%' }}>
+              Flip Vertical
+            </button>
+          </div>
+
+          {/* Reset Image */}
+          <div>
+            <button onClick={onResetImage} style={{ width: '100%' }}>
+              Reset Image
+            </button>
+          </div>
+
+          <hr />
+
+          {/* New / Save / Rename Project section */}
+          <div>
+            <button onClick={onNewProject} style={{ width: '100%', marginBottom: '5px' }}>
+              New Project
+            </button>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Project Name:</strong>
+            </label>
+            <input
+              type="text"
+              placeholder="Type or pick a name"
+              value={projectNameInput}
+              onChange={e => setProjectNameInput(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+            {currentProject === '' ? (
+              <button onClick={handleSaveAsClick} style={{ marginTop: '5px', width: '100%' }}>
+                Save As…
+              </button>
+            ) : (
+              <button onClick={handleSaveExistingClick} style={{ marginTop: '5px', width: '100%' }}>
+                Save
+              </button>
+            )}
+            {currentProject && (
+              <button onClick={handleRenameClick} style={{ marginTop: '5px', width: '100%' }}>
+                Rename
+              </button>
+            )}
+          </div>
+
+          {/* Load Existing Project */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <strong>Load Existing Project</strong>
+            </label>
+            <select
+              value={currentProject}
+              onChange={handleProjectSelect}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">-- select project --</option>
+              {projectNames.map(name => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <button onClick={handleLoadClick} style={{ marginTop: '5px', width: '100%' }}>
+              Load
+            </button>
+          </div>
+
+          <hr />
+
+          {/* Download Snapshot */}
+          <div>
+            <button onClick={onDownloadSnapshot} style={{ width: '100%', background: '#28a745', color: '#fff' }}>
+              Download Snapshot
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Saturation</strong> (0%–200%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          defaultValue="100"
-          onChange={e => onSaturationChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Hue Rotate</strong> (0°–360°)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="360"
-          step="1"
-          defaultValue="0"
-          onChange={e => onHueChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Opacity</strong> (0%–100%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          defaultValue="100"
-          onChange={e => onOpacityChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Brightness</strong> (0%–200%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          defaultValue="100"
-          onChange={e => onBrightnessChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={onInvert} style={{ width: '100%' }}>
-          Invert Colors
-        </button>
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={onFlipH} style={{ width: '100%' }}>
-          Flip Horizontal
-        </button>
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={onFlipV} style={{ width: '100%' }}>
-          Flip Vertical
-        </button>
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={onResetImage} style={{ width: '100%' }}>
-          Reset Image
-        </button>
-      </div>
-
-      <hr />
-
-      {/* PROJECT MANAGEMENT SECTION */}
-      <div style={{ marginBottom: 10 }}>
-        <button onClick={onNewProject} style={{ width: '100%', marginBottom: 5 }}>
-          New Project
-        </button>
-        <label htmlFor="projectNameInput" style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Project Name:</strong>
-        </label>
-        <input
-          id="projectNameInput"
-          type="text"
-          placeholder="Type or pick a name"
-          value={projectNameInput}
-          onChange={e => setProjectNameInput(e.target.value)}
-          style={{ width: '100%', boxSizing: 'border-box' }}
-        />
-        {currentProject === '' ? (
-          <button
-            onClick={handleSaveAsClick}
-            style={{ marginTop: 5, width: '100%' }}
-          >
-            Save As…
-          </button>
-        ) : (
-          <button
-            onClick={handleSaveExistingClick}
-            style={{ marginTop: 5, width: '100%' }}
-          >
-            Save
-          </button>
-        )}
-        {currentProject && (
-          <button
-            onClick={handleRenameClick}
-            style={{ marginTop: 5, width: '100%' }}
-          >
-            Rename
-          </button>
-        )}
-      </div>
-
-      <div style={{ marginTop: 20, marginBottom: 20 }}>
-        <label htmlFor="projectSelect" style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Load Existing Project</strong>
-        </label>
-        <select
-          id="projectSelect"
-          value={currentProject}
-          onChange={handleProjectSelect}
-          style={{ width: '100%', boxSizing: 'border-box' }}
-        >
-          <option value="">-- select project --</option>
-          {projectNames.map(name => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleLoadClick}
-          style={{ marginTop: 5, width: '100%' }}
-        >
-          Load
-        </button>
-      </div>
-
-      <hr />
-
-      <div>
-        <button onClick={onDownloadSnapshot} style={{ width: '100%', background: '#28a745', color: '#fff' }}>
-          Download Snapshot
-        </button>
       </div>
     </div>
   );
