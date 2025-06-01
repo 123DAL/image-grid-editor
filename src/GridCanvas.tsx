@@ -15,6 +15,7 @@ type Props = {
   cellInverted: Record<string, boolean>;
   cellFlipH: Record<string, boolean>;
   cellFlipV: Record<string, boolean>;
+  snapshotMode: boolean;
 };
 
 const SIZE = 80;
@@ -36,23 +37,24 @@ const GridCanvas: React.FC<Props> = ({
   cellInverted,
   cellFlipH,
   cellFlipV,
+  snapshotMode,
 }) => {
+  // Click / Ctrl+Click / Double‐Click logic
   const handleClick = (row: number, col: number, ev: React.MouseEvent) => {
-    const id = `${row + 1}${String.fromCharCode(65 + col)}`;
+    const id = `${row + 1}${String.fromCharCode(65 + col)}`; // e.g. "3C"
     if (ev.detail === 2) {
+      // Double‐click → clear all selections
       setSelectedCells(new Set());
     } else if (ev.ctrlKey || ev.metaKey) {
+      // Ctrl+click → unselect that cell
       setSelectedCells(prev => {
         const s = new Set(prev);
         s.delete(id);
         return s;
       });
     } else {
-      setSelectedCells(prev => {
-        const s = new Set(prev);
-        s.add(id);
-        return s;
-      });
+      // Normal click → select
+      setSelectedCells(prev => new Set(prev).add(id));
     }
   };
 
@@ -61,7 +63,7 @@ const GridCanvas: React.FC<Props> = ({
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${COLS}, ${SIZE}px)`,
-        gridTemplateRows:    `repeat(${ROWS}, ${SIZE}px)`,
+        gridTemplateRows: `repeat(${ROWS}, ${SIZE}px)`,
         gap: 4,
         marginRight: 20,
       }}
@@ -69,61 +71,99 @@ const GridCanvas: React.FC<Props> = ({
       {Array.from({ length: ROWS }).flatMap((_, r) =>
         Array.from({ length: COLS }).map((_, c) => {
           const id = `${r + 1}${String.fromCharCode(65 + c)}`;
-          const selected = selectedCells.has(id);
-          const imgSrc = cellImages[id];
-          const scale = (cellScales[id] ?? 100) / 100;
-          const { dx = 0, dy = 0 } = cellOffsets[id] || {};
+          const img = cellImages[id];
+          const scale = cellScales[id] || 100;
+          const offset = cellOffsets[id] || { dx: 0, dy: 0 };
           const rotation = cellRotations[id] || 0;
           const saturation = cellSaturation[id] ?? 100;
-          const hueValue = cellHue[id] ?? 0;
-          const opacityValue = (cellOpacity[id] ?? 100) / 100;
-          const brightnessVal = cellBrightness[id] ?? 100;
-          const inverted = cellInverted[id] || false;
+          const hue = cellHue[id] ?? 0;
+          const opacity = (cellOpacity[id] ?? 100) / 100;
+          const brightness = cellBrightness[id] ?? 100;
+          const inverted = cellInverted[id] ? 1 : 0;
           const flipH = cellFlipH[id] ? -1 : 1;
           const flipV = cellFlipV[id] ? -1 : 1;
+
+          const selected = selectedCells.has(id);
+
+          // 1) Hide borders & background during snapshot
+          const borderStyle = snapshotMode
+            ? 'none'
+            : selected
+            ? '3px solid #007acc'
+            : '1px solid #ccc';
+
+          const bgColor = snapshotMode
+            ? 'transparent'
+            : selected
+            ? '#e6f7ff'
+            : '#fff';
+
+          // 2) Force overflow:visible for snapshotMode or when allowOverflow is true
+          const overflowStyle = snapshotMode
+            ? 'visible'
+            : allowOverflow
+            ? 'visible'
+            : 'hidden';
+
+          // 3) If there's an image and overflow is allowed, bump it above neighbors
+          const zIndexStyle =
+            img && allowOverflow && !snapshotMode ? 1 : 'auto';
 
           return (
             <div
               key={id}
-              onClick={e => handleClick(r, c, e)}
+              onClick={(e) => handleClick(r, c, e)}
               style={{
                 width: SIZE,
                 height: SIZE,
-                border: selected ? '3px solid #007acc' : '1px solid #ccc',
-                background: selected ? '#e6f7ff' : '#fff',
+                border: borderStyle,
+                background: bgColor,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 position: 'relative',
                 cursor: 'pointer',
-                overflow: allowOverflow ? 'visible' : 'hidden',
-                zIndex: allowOverflow && imgSrc ? 10 : 'auto',
+                overflow: overflowStyle,
+                zIndex: zIndexStyle,
               }}
             >
-              {imgSrc ? (
+              {img ? (
                 <img
-                  src={imgSrc}
+                  src={img}
                   alt={id}
                   style={{
                     transform: `
-                      translate(${dx}px, ${dy}px)
+                      scale(${scale / 100})
+                      translate(${offset.dx}px, ${offset.dy}px)
                       rotate(${rotation}deg)
-                      scale(${flipH * scale}, ${flipV * scale})
+                      scaleX(${flipH})
+                      scaleY(${flipV})
                     `,
-                    transformOrigin: 'center center',
-                    opacity: opacityValue,
                     filter: `
-                      invert(${inverted ? 1 : 0})
                       saturate(${saturation}%)
-                      hue-rotate(${hueValue}deg)
-                      brightness(${brightnessVal}%)
+                      hue-rotate(${hue}deg)
+                      brightness(${brightness}%)
+                      invert(${inverted})
                     `,
+                    opacity: opacity,
+                    transformOrigin: 'center center',
                     maxWidth: '100%',
                     maxHeight: '100%',
                   }}
                 />
               ) : (
-                <span>{id}</span>
+                // Only show the cell “ID” when NOT in snapshotMode
+                !snapshotMode && (
+                  <span
+                    style={{
+                      userSelect: 'none',
+                      fontSize: '0.8rem',
+                      color: '#555',
+                    }}
+                  >
+                    {id}
+                  </span>
+                )
               )}
             </div>
           );
