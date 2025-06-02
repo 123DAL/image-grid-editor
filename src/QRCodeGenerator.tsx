@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 
-// We create a single QRCodeStyling instance and update it whenever inputs change:
+// Single QRCodeStyling instance:
 const qrCode = new QRCodeStyling({
   width: 256,
   height: 256,
   margin: 0,
-  data: '',
+  data: 'iQR.Art', // default text
   qrOptions: {
-    typeNumber: 1,           // version 1 by default
+    typeNumber: 2,
     mode: 'Byte',
     errorCorrectionLevel: 'M',
   },
@@ -30,17 +30,15 @@ const qrCode = new QRCodeStyling({
 });
 
 const QRCodeGenerator: React.FC = () => {
-  const [inputValue, setInputValue] = useState<string>('');
-  const [version, setVersion] = useState<number>(1);
+  const [inputValue, setInputValue] = useState<string>('iQR.Art');
+  const [version, setVersion] = useState<number>(2);
   const [moduleStyle, setModuleStyle] = useState<string>('square');
   const [finderStyle, setFinderStyle] = useState<string>('square');
   const ref = useRef<HTMLDivElement>(null);
 
-  // On any change, update the QR code config and re-render inside our container
   useEffect(() => {
     qrCode.update({
       data: inputValue,
-      // Cast version to any so TS doesn’t complain
       qrOptions: { typeNumber: version as any },
       dotsOptions: { type: moduleStyle as any },
       cornersSquareOptions: { type: finderStyle as any },
@@ -64,7 +62,6 @@ const QRCodeGenerator: React.FC = () => {
     <div style={{ padding: 20, maxWidth: 360, margin: '0 auto' }}>
       <h2>QR Code Generator</h2>
 
-      {/* Text/URL input */}
       <div style={{ marginBottom: 12 }}>
         <label htmlFor="qr-input" style={{ display: 'block', marginBottom: '4px' }}>
           <strong>Enter text or URL:</strong>
@@ -79,7 +76,6 @@ const QRCodeGenerator: React.FC = () => {
         />
       </div>
 
-      {/* Version selector (1–10) */}
       <div style={{ marginBottom: 12 }}>
         <label htmlFor="version-select" style={{ display: 'block', marginBottom: '4px' }}>
           <strong>Version (1–10):</strong>
@@ -98,7 +94,6 @@ const QRCodeGenerator: React.FC = () => {
         </select>
       </div>
 
-      {/* Module style: square or dots */}
       <div style={{ marginBottom: 12 }}>
         <label htmlFor="module-style" style={{ display: 'block', marginBottom: '4px' }}>
           <strong>Module style:</strong>
@@ -118,7 +113,6 @@ const QRCodeGenerator: React.FC = () => {
         </select>
       </div>
 
-      {/* Finder style: square or dot */}
       <div style={{ marginBottom: 16 }}>
         <label htmlFor="finder-style" style={{ display: 'block', marginBottom: '4px' }}>
           <strong>Finder style:</strong>
@@ -136,7 +130,6 @@ const QRCodeGenerator: React.FC = () => {
         </select>
       </div>
 
-      {/* QR preview container */}
       <div
         ref={ref}
         style={{
@@ -148,7 +141,6 @@ const QRCodeGenerator: React.FC = () => {
         }}
       />
 
-      {/* Download buttons */}
       <div style={{ display: 'flex', gap: '8px' }}>
         <button
           onClick={downloadPNG}
