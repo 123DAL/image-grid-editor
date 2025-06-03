@@ -58,6 +58,13 @@ const App: React.FC = () => {
   const [mapR, setMapR] = useState<boolean>(false);
   const [mapBL, setMapBL] = useState<boolean>(false);
 
+  // ── Zone‐border configuration ──
+  const [borderConfig, setBorderConfig] = useState<{
+    zone: 'all' | 'quiet' | 'outerFinder' | 'innerFinder' | 'none';
+    width: number;
+    color: string;
+  }>({ zone: 'all', width: 1, color: '#000000' });
+
   // ── Snapshot mode ──
   const [snapshotMode, setSnapshotMode] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -181,9 +188,9 @@ const App: React.FC = () => {
 
   // ── Branding‐grid controls (unchanged) ──
   const handleUpload = (dataUrl: string) => {
-    setCellImages(imgs => {
+    setCellImages((imgs) => {
       const copy = { ...imgs };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = dataUrl;
       });
       return copy;
@@ -191,9 +198,9 @@ const App: React.FC = () => {
   };
 
   const handleScaleChange = (scale: number) => {
-    setCellScales(scales => {
+    setCellScales((scales) => {
       const copy = { ...scales };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = scale;
       });
       return copy;
@@ -205,9 +212,9 @@ const App: React.FC = () => {
   };
 
   const handleNudge = (dx: number, dy: number) => {
-    setCellOffsets(offsets => {
+    setCellOffsets((offsets) => {
       const copy = { ...offsets };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         const prev = copy[id] || { dx: 0, dy: 0 };
         copy[id] = { dx: prev.dx + dx, dy: prev.dy + dy };
       });
@@ -216,9 +223,9 @@ const App: React.FC = () => {
   };
 
   const handleRotateTo = (angle: number) => {
-    setCellRotations(rotations => {
+    setCellRotations((rotations) => {
       const copy = { ...rotations };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = ((angle % 360) + 360) % 360;
       });
       return copy;
@@ -226,9 +233,9 @@ const App: React.FC = () => {
   };
 
   const handleSaturationChange = (saturation: number) => {
-    setCellSaturation(sats => {
+    setCellSaturation((sats) => {
       const copy = { ...sats };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = saturation;
       });
       return copy;
@@ -236,9 +243,9 @@ const App: React.FC = () => {
   };
 
   const handleHueChange = (hue: number) => {
-    setCellHue(hues => {
+    setCellHue((hues) => {
       const copy = { ...hues };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = hue;
       });
       return copy;
@@ -246,9 +253,9 @@ const App: React.FC = () => {
   };
 
   const handleOpacityChange = (opacity: number) => {
-    setCellOpacity(op => {
+    setCellOpacity((op) => {
       const copy = { ...op };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = opacity;
       });
       return copy;
@@ -256,9 +263,9 @@ const App: React.FC = () => {
   };
 
   const handleBrightnessChange = (brightness: number) => {
-    setCellBrightness(brights => {
+    setCellBrightness((brights) => {
       const copy = { ...brights };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = brightness;
       });
       return copy;
@@ -266,9 +273,9 @@ const App: React.FC = () => {
   };
 
   const handleInvert = () => {
-    setCellInverted(inv => {
+    setCellInverted((inv) => {
       const copy = { ...inv };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = !copy[id];
       });
       return copy;
@@ -276,9 +283,9 @@ const App: React.FC = () => {
   };
 
   const handleFlipH = () => {
-    setCellFlipH(flips => {
+    setCellFlipH((flips) => {
       const copy = { ...flips };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = !copy[id];
       });
       return copy;
@@ -286,9 +293,9 @@ const App: React.FC = () => {
   };
 
   const handleFlipV = () => {
-    setCellFlipV(flips => {
+    setCellFlipV((flips) => {
       const copy = { ...flips };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         copy[id] = !copy[id];
       });
       return copy;
@@ -296,9 +303,9 @@ const App: React.FC = () => {
   };
 
   const handleResetImage = () => {
-    setCellImages(imgs => {
+    setCellImages((imgs) => {
       const copy = { ...imgs };
-      selectedCells.forEach(id => {
+      selectedCells.forEach((id) => {
         delete copy[id];
       });
       return copy;
@@ -309,9 +316,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
-        setCellImages(imgs => {
+        setCellImages((imgs) => {
           const copy = { ...imgs };
-          selectedCells.forEach(id => {
+          selectedCells.forEach((id) => {
             delete copy[id];
           });
           return copy;
@@ -344,7 +351,7 @@ const App: React.FC = () => {
     const dataUrl = cellImages[brandingId];
     if (!dataUrl) return undefined;
 
-    return new Promise<string>(resolve => {
+    return new Promise<string>((resolve) => {
       const img = new Image();
       img.onload = () => {
         // Create an offscreen canvas for exactly one cell’s final appearance:
@@ -388,7 +395,7 @@ const App: React.FC = () => {
         //  - Apply scale & flips
         ctx.scale(scalePct * flipH, scalePct * flipV);
         //  - Draw image centered (img natural size unknown, so fit into cell)
-        //    We’ll draw the image so that its center aligns with canvas center,
+        //    We’ll draw the image so that its center aligns with canvas center(),
         //    and scale it down if necessary to fit within cell bounds.
         const imgRatio = img.width / img.height;
         let drawW = SIZE;
@@ -464,7 +471,7 @@ const App: React.FC = () => {
       {/* ── TOGGLE ── */}
       <div style={{ marginBottom: 20 }}>
         <button
-          onClick={() => setShowQRPage(prev => !prev)}
+          onClick={() => setShowQRPage((prev) => !prev)}
           style={{ padding: '8px 12px', fontSize: '1rem' }}
         >
           {showQRPage ? '← Back to Branding' : 'Generate QR Code'}
@@ -476,7 +483,11 @@ const App: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           {/* LEFT: QRMatrixGrid */}
           <div style={{ flexBasis: '60%', marginRight: 20 }}>
-            <QRMatrixGrid version={qrVersion} finderData={finderMap} />
+            <QRMatrixGrid
+              version={qrVersion}
+              finderData={finderMap}
+              borderConfig={borderConfig}
+            />
 
             <div style={{ marginTop: 12 }}>
               <label htmlFor="qr-version" style={{ marginRight: 8 }}>
@@ -485,15 +496,15 @@ const App: React.FC = () => {
               <select
                 id="qr-version"
                 value={qrVersion}
-                onChange={e => {
+                onChange={(e) => {
                   const v = parseInt(e.target.value, 10);
                   setQrVersion(v);
-                  // If we already mapped something at version=2, we may want to re‐position those
-                  // finder‐cells into the new offsets for version=v. For simplicity, we’ll clear them:
+                  // If we already mapped something at version=2,
+                  // clear them for a new version:
                   setFinderMap({});
                 }}
               >
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(v => (
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
                   <option key={v} value={v}>
                     {v}
                   </option>
@@ -549,7 +560,7 @@ const App: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={mapL}
-                    onChange={e => setMapL(e.target.checked)}
+                    onChange={(e) => setMapL(e.target.checked)}
                   />{' '}
                   L
                 </label>
@@ -558,7 +569,7 @@ const App: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={mapR}
-                    onChange={e => setMapR(e.target.checked)}
+                    onChange={(e) => setMapR(e.target.checked)}
                   />{' '}
                   R
                 </label>
@@ -567,7 +578,7 @@ const App: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={mapBL}
-                    onChange={e => setMapBL(e.target.checked)}
+                    onChange={(e) => setMapBL(e.target.checked)}
                   />{' '}
                   BL
                 </label>
@@ -608,7 +619,6 @@ const App: React.FC = () => {
               onFlipV={handleFlipV}
               onResetImage={handleResetImage}
               onDownloadSnapshot={handleDownloadSnapshot}
-
               onNewProject={handleNewProject}
               onSaveAs={handleSaveAs}
               onSaveExisting={handleSaveExisting}
@@ -617,6 +627,8 @@ const App: React.FC = () => {
               currentProject={currentProject}
               setCurrentProject={setCurrentProject}
               onLoadProject={handleLoadProject}
+              onShowQR={() => setShowQRPage(true)}
+              onBorderConfigChange={setBorderConfig}
             />
           </div>
         </div>
