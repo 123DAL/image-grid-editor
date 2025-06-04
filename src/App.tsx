@@ -1,7 +1,8 @@
+// src/App.tsx
 import React from 'react';
-import CustomQREditor from './CustomQREditor';
+import WorkspaceEditor from './WorkspaceEditor';
 
-const App: React.FC = () => <CustomQREditor />;
+const App: React.FC = () => <WorkspaceEditor />;
 
 export default App;
 

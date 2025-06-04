@@ -1,19 +1,43 @@
+// src/SidebarControls.tsx
 import React, { useState, useEffect } from 'react';
 
 type Props = {
-  onUpload: (dataUrl: string) => void;
-  onScaleChange: (scale: number) => void;
-  onToggleOverflow: (allow: boolean) => void;
-  onNudge: (dx: number, dy: number) => void;
-  onRotateTo: (angle: number) => void;
-  onSaturationChange: (saturation: number) => void;
-  onHueChange: (hue: number) => void;
-  onOpacityChange: (opacity: number) => void;
-  onBrightnessChange: (brightness: number) => void;
-  onInvert: () => void;
-  onFlipH: () => void;
-  onFlipV: () => void;
-  onResetImage: () => void;
+  /** Which cell is currently selected (format "r,c"), or null if none. */
+  selectedCell: string | null;
+
+  /** Upload an image dataURL into exactly one cellKey ("r,c"). */
+  onUploadToCell: (cellKey: string, dataUrl: string) => void;
+
+  /** Scale that one cell (value between 50 and 400). */
+  onScaleChange: (cellKey: string, scale: number) => void;
+
+  /** Nudge that one cell by (dx,dy) in px. */
+  onNudge: (cellKey: string, dx: number, dy: number) => void;
+
+  /** Rotate that one cell to the given angle (0–360). */
+  onRotateTo: (cellKey: string, angle: number) => void;
+
+  /** Invert that one cell’s colors. */
+  onInvert: (cellKey: string) => void;
+
+  /** Flip that one cell horizontally. */
+  onFlipH: (cellKey: string) => void;
+
+  /** Flip that one cell vertically. */
+  onFlipV: (cellKey: string) => void;
+
+  /** Remove any image + transforms from that one cell. */
+  onResetImage: (cellKey: string) => void;
+
+  /** Current per‐cell state, so the controls can display the right “current value.” */
+  cellScales: Record<string, number>;
+  cellOffsets: Record<string, { dx: number; dy: number }>;
+  cellRotations: Record<string, number>;
+  cellInverted: Record<string, boolean>;
+  cellFlipH: Record<string, boolean>;
+  cellFlipV: Record<string, boolean>;
+
+  /** (Optional stubs for project/save functionality.) */
   onDownloadSnapshot: () => void;
   onNewProject: () => void;
   onSaveAs: (name: string) => void;
@@ -23,30 +47,24 @@ type Props = {
   currentProject: string;
   setCurrentProject: (name: string) => void;
   onLoadProject: (name: string) => void;
-  onShowQR: () => void;
-
-  // New prop for zone-border configurations:
-  onBorderConfigChange: (config: {
-    zone: 'all' | 'quiet' | 'outerFinder' | 'innerFinder' | 'none';
-    width: number;
-    color: string;
-  }) => void;
 };
 
 const SidebarControls: React.FC<Props> = ({
-  onUpload,
+  selectedCell,
+  onUploadToCell,
   onScaleChange,
-  onToggleOverflow,
   onNudge,
   onRotateTo,
-  onSaturationChange,
-  onHueChange,
-  onOpacityChange,
-  onBrightnessChange,
   onInvert,
   onFlipH,
   onFlipV,
   onResetImage,
+  cellScales,
+  cellOffsets,
+  cellRotations,
+  cellInverted,
+  cellFlipH,
+  cellFlipV,
   onDownloadSnapshot,
   onNewProject,
   onSaveAs,
@@ -56,213 +74,149 @@ const SidebarControls: React.FC<Props> = ({
   currentProject,
   setCurrentProject,
   onLoadProject,
-  onShowQR,
-  onBorderConfigChange, // New
 }) => {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedCell) {
+      alert('Please select a cell first.');
+      e.target.value = '';
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        onUpload(reader.result);
+        onUploadToCell(selectedCell, reader.result);
       }
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
-  // Local state for the “Zone Border Settings” controls:
-  const [selectedZone, setSelectedZone] = useState<
-    'all' | 'quiet' | 'outerFinder' | 'innerFinder' | 'none'
-  >('all');
-  const [borderWidth, setBorderWidth] = useState<number>(1);
-  const [borderColor, setBorderColor] = useState<string>('#000000');
+  // When user moves any of these sliders/buttons, we immediately call the parent handler.
+  const handleScaleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedCell) return;
+    onScaleChange(selectedCell, parseInt(e.target.value, 10));
+  };
+  const handleRotateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedCell) return;
+    onRotateTo(selectedCell, parseInt(e.target.value, 10) || 0);
+  };
+  const handleNudgeUp = () => { if (selectedCell) onNudge(selectedCell, 0, -1); };
+  const handleNudgeLeft = () => { if (selectedCell) onNudge(selectedCell, -1, 0); };
+  const handleNudgeRight = () => { if (selectedCell) onNudge(selectedCell, 1, 0); };
+  const handleNudgeDown = () => { if (selectedCell) onNudge(selectedCell, 0, 1); };
+  const handleInvertClick = () => { if (selectedCell) onInvert(selectedCell); };
+  const handleFlipHClick = () => { if (selectedCell) onFlipH(selectedCell); };
+  const handleFlipVClick = () => { if (selectedCell) onFlipV(selectedCell); };
+  const handleResetClick = () => { if (selectedCell) onResetImage(selectedCell); };
 
-  // Notify parent whenever zone, width, or color changes:
-  useEffect(() => {
-    onBorderConfigChange({
-      zone: selectedZone,
-      width: borderWidth,
-      color: borderColor,
-    });
-  }, [selectedZone, borderWidth, borderColor, onBorderConfigChange]);
+  // Grab current per‐cell values (or defaults) so sliders/buttons can show them:
+  const currentScale = selectedCell ? cellScales[selectedCell] ?? 100 : 100;
+  const currentRotation = selectedCell ? cellRotations[selectedCell] ?? 0 : 0;
 
   return (
     <div style={{ width: 200, padding: '10px', border: '1px solid #ddd' }}>
-      <h3>Controls</h3>
+      <h3>Image Controls</h3>
 
-      {/* Image Upload */}
+      {/* File upload → drops into selected cell */}
       <div style={{ marginBottom: 15 }}>
         <label style={{ display: 'block', marginBottom: 5 }}>
           <strong>Upload Image</strong>
         </label>
         <input type="file" accept="image/*" onChange={handleFile} />
+        <small style={{ color: '#666' }}>
+          (Click a cell, then pick a file.)
+        </small>
       </div>
 
-      {/* Scale Slider */}
+      {/* Scale slider */}
       <div style={{ marginBottom: 15 }}>
         <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Scale</strong> (50%–400%)
+          <strong>Scale:</strong> {currentScale}%
         </label>
         <input
           type="range"
           min="50"
           max="400"
           step="1"
-          defaultValue="100"
-          onChange={e => onScaleChange(parseInt(e.target.value, 10))}
+          value={currentScale}
+          onChange={handleScaleInput}
           style={{ width: '100%' }}
+          disabled={!selectedCell}
         />
       </div>
 
-      {/* Overflow Toggle */}
-      <div style={{ marginBottom: 15 }}>
-        <label>
-          <input
-            type="checkbox"
-            onChange={e => onToggleOverflow(e.target.checked)}
-          />{' '}
-          Allow Overflow
-        </label>
-      </div>
-
-      {/* Nudge Buttons */}
+      {/* Nudge buttons */}
       <div style={{ marginBottom: 15 }}>
         <strong>Nudge:</strong>
         <div style={{ display: 'flex', gap: '5px', marginTop: 5 }}>
-          <button onClick={() => onNudge(0, -1)}>↑</button>
-          <button onClick={() => onNudge(-1, 0)}>←</button>
-          <button onClick={() => onNudge(1, 0)}>→</button>
-          <button onClick={() => onNudge(0, 1)}>↓</button>
+          <button onClick={handleNudgeUp} disabled={!selectedCell}>↑</button>
+          <button onClick={handleNudgeLeft} disabled={!selectedCell}>←</button>
+          <button onClick={handleNudgeRight} disabled={!selectedCell}>→</button>
+          <button onClick={handleNudgeDown} disabled={!selectedCell}>↓</button>
         </div>
       </div>
 
-      {/* Rotate to Angle */}
+      {/* Rotate input */}
       <div style={{ marginBottom: 15 }}>
         <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Rotate To (0–360°)</strong>
+          <strong>Rotate (°):</strong>
         </label>
         <input
           type="number"
           min="0"
           max="360"
-          defaultValue="0"
-          onChange={e => onRotateTo(parseInt(e.target.value, 10) || 0)}
+          value={currentRotation}
+          onChange={handleRotateInput}
           style={{ width: '100%' }}
-        />
-      </div>
-
-      {/* Saturation Slider */}
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Saturation</strong> (0%–200%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          defaultValue="100"
-          onChange={e => onSaturationChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      {/* Hue Rotation Slider */}
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Hue Rotate</strong> (0°–360°)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="360"
-          step="1"
-          defaultValue="0"
-          onChange={e => onHueChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      {/* Opacity Slider */}
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Opacity</strong> (0%–100%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          defaultValue="100"
-          onChange={e => onOpacityChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      {/* Brightness Slider */}
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ display: 'block', marginBottom: 5 }}>
-          <strong>Brightness</strong> (0%–200%)
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          defaultValue="100"
-          onChange={e => onBrightnessChange(parseInt(e.target.value, 10))}
-          style={{ width: '100%' }}
+          disabled={!selectedCell}
         />
       </div>
 
       {/* Invert / Flip / Reset */}
       <div style={{ marginBottom: 15 }}>
-        <button onClick={onInvert} style={{ marginRight: 5 }}>
+        <button onClick={handleInvertClick} disabled={!selectedCell} style={{ marginRight: 5 }}>
           Invert Colors
         </button>
-        <button onClick={onFlipH} style={{ marginRight: 5 }}>
+        <button onClick={handleFlipHClick} disabled={!selectedCell} style={{ marginRight: 5 }}>
           Flip H
         </button>
-        <button onClick={onFlipV} style={{ marginRight: 5 }}>
+        <button onClick={handleFlipVClick} disabled={!selectedCell} style={{ marginBottom: 5 }}>
           Flip V
         </button>
-        <button onClick={onResetImage} style={{ marginTop: 5, width: '100%' }}>
-          Reset Image
+        <button
+          onClick={handleResetClick}
+          disabled={!selectedCell}
+          style={{ marginTop: 5, width: '100%', background: '#c33', color: '#fff', border: 'none', cursor: 'pointer' }}
+        >
+          Remove Image
         </button>
       </div>
 
-      {/* Download Snapshot */}
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={onDownloadSnapshot} style={{ width: '100%' }}>
-          Download PNG
-        </button>
-      </div>
+      <hr />
 
-      {/* Project Management */}
+      {/* (Optional) Project Management Stubs */}
       <div style={{ marginBottom: 15 }}>
         <button onClick={onNewProject} style={{ marginBottom: 8, width: '100%' }}>
           New Project
         </button>
-
         <button
           onClick={() => {
-            const name = prompt('Enter a name for this project:');
-            if (name !== null) onSaveAs(name);
+            const name = prompt('Save As…');
+            if (name) onSaveAs(name);
           }}
           style={{ marginBottom: 8, width: '100%' }}
         >
           Save As…
         </button>
-
         <button onClick={onSaveExisting} style={{ marginBottom: 8, width: '100%' }}>
           Save Existing
         </button>
-
         <button
           onClick={() => {
-            const newName = prompt('Enter new name for this project:');
-            if (newName !== null) onRename(newName);
+            const newName = prompt('Rename Project…');
+            if (newName) onRename(newName);
           }}
           style={{ marginBottom: 8, width: '100%' }}
         >
@@ -286,63 +240,9 @@ const SidebarControls: React.FC<Props> = ({
             ))}
           </select>
         </div>
-
-        <button onClick={onShowQR} style={{ width: '100%' }}>
-          Generate QR Code
+        <button onClick={onDownloadSnapshot} style={{ width: '100%' }}>
+          Download Snapshot
         </button>
-      </div>
-
-      {/* ── NEW: Zone Border Settings ── */}
-      <div style={{ marginBottom: 15, borderTop: '1px solid #ccc', paddingTop: 10 }}>
-        <h4>Zone Border Settings</h4>
-
-        <div style={{ marginBottom: 8 }}>
-          <label>
-            <strong>Zone:</strong>
-            <select
-              value={selectedZone}
-              onChange={e =>
-                setSelectedZone(
-                  e.target.value as 'all' | 'quiet' | 'outerFinder' | 'innerFinder' | 'none'
-                )
-              }
-              style={{ marginLeft: 5, width: '100%' }}
-            >
-              <option value="all">All Cells</option>
-              <option value="quiet">Quiet Zone</option>
-              <option value="outerFinder">Outer Finder (7×7)</option>
-              <option value="innerFinder">Inner Finder (3×3)</option>
-              <option value="none">No Border</option>
-            </select>
-          </label>
-        </div>
-
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', marginBottom: 4 }}>
-            <strong>Width:</strong> {borderWidth}px
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="10"
-            step="1"
-            value={borderWidth}
-            onChange={e => setBorderWidth(parseInt(e.target.value, 10))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', marginBottom: 4 }}>
-            <strong>Color:</strong>
-          </label>
-          <input
-            type="color"
-            value={borderColor}
-            onChange={e => setBorderColor(e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
       </div>
     </div>
   );
