@@ -1,0 +1,21 @@
+/* QRMasterPanel.css */
+
+.qr-master-panel {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.qr-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+  gap: 2px;
+}
+

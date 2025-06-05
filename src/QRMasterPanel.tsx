@@ -1,119 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { generateQRMatrix } from './QRUtils';
-import CellEditor from './CellEditor';
-
-type GridMode = 'branding' | 'full';
-
-const BRANDING_SIZE = 7;
-const FULL_QR_VERSION = 2; // version 2 QR = 25 modules + 8 quiet zone = 33
-const CELL_SIZE = 40;
+import './QRMasterPanel.css'; // Optional: for better styling
 
 const QRMasterPanel: React.FC = () => {
-  const [gridMode, setGridMode] = useState<GridMode>('branding');
-  const [qrMatrix, setQrMatrix] = useState<boolean[][]>([]);
-  const [cellImages, setCellImages] = useState<Record<string, string>>({});
+  const [matrix, setMatrix] = useState<boolean[][]>([]);
+  const [data, setData] = useState('iqr.art');
+  const [style, setStyle] = useState<'dot' | 'circle' | 'square'>('dot');
 
-  const croppedMatrix =
-  gridMode === 'branding'
-    ? qrMatrix.slice(4, 11).map(row => row.slice(4, 11))
-    : qrMatrix;
-
-const gridSize = croppedMatrix.length;
-
+  // Load QR matrix
   useEffect(() => {
-    const matrix = generateQRMatrix(FULL_QR_VERSION as any, 'M', 'iqr.art');
-    setQrMatrix(matrix);
-  }, []);
+    const qr = generateQRMatrix(2, 'M', data);
+    setMatrix(qr);
+  }, [data]);
 
-  const handleToggle = () => {
-    setGridMode((prev) => (prev === 'branding' ? 'full' : 'branding'));
+  // Toggle a single cell
+  const toggleCell = (row: number, col: number) => {
+    const newMatrix = matrix.map((r, ri) =>
+      r.map((val, ci) => (ri === row && ci === col ? !val : val))
+    );
+    setMatrix(newMatrix);
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <button onClick={handleToggle}>
-        Switch to {gridMode === 'branding' ? 'Full QR Grid' : '7x7 Branding Mode'}
-      </button>
+      <h2>QR Code Generator</h2>
+
+      <div style={{ marginBottom: 12 }}>
+        <input
+          value={data}
+          onChange={(e) => setData(e.target.value)}
+          placeholder="Enter QR data"
+          style={{ fontSize: 16, padding: 4 }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label>Select Dot Style:</label>{' '}
+        <select value={style} onChange={(e) => setStyle(e.target.value as any)}>
+          <option value="dot">Dot</option>
+          <option value="circle">Circle</option>
+          <option value="square">Square</option>
+        </select>
+      </div>
 
       <div
         style={{
-          position: 'relative',
-          marginTop: 20,
-          width: gridSize * CELL_SIZE,
-          height: gridSize * CELL_SIZE,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${matrix[0]?.length || 0}, 20px)`,
+          gap: 1,
         }}
       >
-        {/* QR Background */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, ${CELL_SIZE}px)`,
-            gap: 0,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 0,
-          }}
-        >
-          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-            const row = Math.floor(i / gridSize);
-            const col = i % gridSize;
-            const isDark = croppedMatrix[row]?.[col] ?? false;
-
-            return (
-              <div
-                key={`bg-${row}-${col}`}
-                style={{
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                  backgroundColor: isDark ? '#999' : '#fff',
-                  border: '1px solid #ddd',
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Foreground Cell Layer */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, ${CELL_SIZE}px)`,
-            gap: 0,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-            const row = Math.floor(i / gridSize);
-            const col = i % gridSize;
-            const cellKey = `${row},${col}`;
-
-            return (
-              <div
-                key={`cell-${row}-${col}`}
-                style={{
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                  backgroundColor: 'transparent',
-                  position: 'relative',
-                }}
-              >
-                <CellEditor
-                  row={row}
-                  col={col}
-                  imageData={cellImages[cellKey]}
-                  onImageChange={(dataUrl) =>
-                    setCellImages((prev) => ({
-                      ...prev,
-                      [cellKey]: dataUrl,
-                    }))
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
+        {matrix.map((row, r) =>
+          row.map((cell, c) => (
+            <div
+              key={`${r}-${c}`}
+              onClick={() => toggleCell(r, c)}
+              style={{
+                width: 20,
+                height: 20,
+                backgroundColor: cell ? 'black' : 'white',
+                borderRadius:
+                  style === 'circle' ? '50%' : style === 'dot' ? '40%' : '0%',
+                border: '1px solid #ddd',
+                cursor: 'pointer',
+              }}
+            />
+          ))
+        )}
       </div>
     </div>
   );
