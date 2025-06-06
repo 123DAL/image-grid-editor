@@ -151,20 +151,7 @@ const GridCanvas: React.FC<Props> = ({
                     maxHeight: '100%',
                   }}
                 />
-              ) : (
-                // Only show the cell “ID” when NOT in snapshotMode
-                !snapshotMode && (
-                  <span
-                    style={{
-                      userSelect: 'none',
-                      fontSize: '0.8rem',
-                      color: '#555',
-                    }}
-                  >
-                    {id}
-                  </span>
-                )
-              )}
+              ) : null}
             </div>
           );
         })
