@@ -19,8 +19,8 @@ type Props = {
 };
 
 const SIZE = 80;
-const ROWS = 7;
-const COLS = 7;
+const ROWS = 33;
+const COLS = 33;
 
 const GridCanvas: React.FC<Props> = ({
   selectedCells,
