@@ -18,7 +18,7 @@ type Props = {
   snapshotMode: boolean;
 };
 
-const SIZE = 80;
+const SIZE = 40;
 const ROWS = 33;
 const COLS = 33;
 
